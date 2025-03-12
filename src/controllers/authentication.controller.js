@@ -3,10 +3,14 @@ import User from "../models/user.model.js";
 import { comparePassword } from "../utils/password.util.js";
 import { generateToken, verifyToken } from "../utils/token.util.js";
 import InvalidatedToken from "../models/invalidated.token.model.js";
+import admin from "../configs/firebase.admin.config.js";
+import jwt from "jsonwebtoken";
+import Role from "../enums/role.enum.js";
+
 
 class AuthenticationController {
 
-    //[POST] /token
+    //[POST] auth/token
     async token(req, res) {
         try {
             const { username, password } = req.body;
@@ -38,7 +42,7 @@ class AuthenticationController {
         }
     }
 
-    //[POST] /introspect
+    //[POST] auth/introspect
     async introspect(req, res) {
         try {
             const { token } = req.body;
@@ -66,7 +70,7 @@ class AuthenticationController {
         }
     }
 
-    //[POST] /logout
+    //[POST] auth/logout
     async logout(req, res) {
         try {
             const invalidToken = {
@@ -86,6 +90,49 @@ class AuthenticationController {
                 success: false,
                 message: "Internal server error.",
             });
+        }
+    }
+
+    //[POST] /auth/google
+    async google(req, res) {
+        const { token } = req.body;
+
+        if (!token) {
+            return res.status(400).json({ success: false, message: "Token is required" });
+        }
+
+        try {
+            const decodedToken = await admin.auth().verifyIdToken(token);
+            const decode = decodedToken;
+
+            console.log(decode);
+
+
+            // let user = await User.findOne({ email });
+            // if (!user) {
+            //     const username = email.split("@")[0];
+            //     const role = Role.TRAVELLER;
+            //     user = new User({ email, username, role });
+            //     await user.save();
+            // }
+
+            // const jwtToken = generateToken(user);
+
+            // res.json({ success: true, token: jwtToken });
+        } catch (error) {
+            console.error("Firebase Auth Error:", error);
+            res.status(401).json({ success: false, message: "Invalid token", error });
+        }
+    }
+
+    //[POST] /auth/test
+    async test(req, res) {
+        try {
+            const result = req.body;
+            res.json(result);
+        } catch (error) {
+            console.error("Firebase Auth Error:", error);
+            res.status(401).json({ success: false, message: "Invalid token", error });
         }
     }
 };

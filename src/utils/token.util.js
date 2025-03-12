@@ -22,13 +22,13 @@ export const verifyToken = async (token) => {
     try {
         const decoded = jwt.verify(token, process.env.SECRET_KEY);
 
-        const isValid = await InvalidatedToken.findOne({ token: token });
+        const inValid = await InvalidatedToken.findOne({ token: token });
 
-        if (decoded && !isValid) {
-            return true;
+        if (decoded && !inValid) {
+            return decoded;
         }
-        return false;
+        return null;
     } catch (error) {
-        return false;
+        return null;
     }
 };
