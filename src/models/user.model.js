@@ -1,12 +1,7 @@
 import mongoose from 'mongoose';
-import RoleModel from '../models/role.model.js';
+import mongooseDelete from "mongoose-delete";
 
 const userSchema = new mongoose.Schema({
-    fullName: {
-        type: String,
-        required: true,
-        trim: true,
-    },
     username: {
         type: String,
         trim: true,
@@ -14,33 +9,17 @@ const userSchema = new mongoose.Schema({
     },
     password: {
         type: String,
-        required: true,
-    },
-    email: {
-        type: String,
-        required: true,
-    },
-    phoneNumber: {
-        type: String,
-        required: true,
-    },
-    address: {
-        type: String,
-    },
-    profilePicture: {
-        type: String,
-        default: '',
-    },
-    bio: {
-        type: String,
-        default: '',
     },
     role: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Role',
         default: null,
     },
-});
+},
+    { timestamps: true }
+);
+
+userSchema.plugin(mongooseDelete, { deletedAt: true, overrideMethods: true });
 
 const User = mongoose.model('User', userSchema);
 export default User;

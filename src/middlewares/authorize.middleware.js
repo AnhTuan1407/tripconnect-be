@@ -1,6 +1,7 @@
 import { StatusCodes } from "http-status-codes";
 import User from "../models/user.model.js";
 import { verifyToken } from "../utils/token.util.js";
+import Profile from "../models/profile.model.js";
 
 export const authorize = (...roles) => {
     return (req, res, next) => {
@@ -52,7 +53,7 @@ export const authenticated = async (req, res, next) => {
     }
 };
 
-export const checkOwnerId = async (req, res, next) => {
+export const checkOwnerUserId = async (req, res, next) => {
     try {
         if (req.user.role === "ADMIN") {
             return next();
@@ -61,6 +62,30 @@ export const checkOwnerId = async (req, res, next) => {
         const user = await User.findOne({ _id: req.params.id });
 
         if (!user || user._id.toString() !== req.user.userId) {
+            return res.status(StatusCodes.FORBIDDEN).json({
+                success: false,
+                message: "You do not have permission to perform this action.",
+            });
+        }
+
+        next();
+    } catch (error) {
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+            success: false,
+            message: "Internal Server Error",
+        });
+    }
+};
+
+export const checkOwnerProfileId = async (req, res, next) => {
+    try {
+        if (req.user.role === "ADMIN") {
+            return next();
+        }
+
+        const profile = await Profile.findOne({ _id: req.params.id });
+
+        if (!profile || profile.userId.toString() !== req.user.userId) {
             return res.status(StatusCodes.FORBIDDEN).json({
                 success: false,
                 message: "You do not have permission to perform this action.",
