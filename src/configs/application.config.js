@@ -1,9 +1,9 @@
 import mongoose from "mongoose";
-import dbConnect from "../configs/db.config.js";
+
+import connectMongoDB from "./db.config.js";
 import Role from "../enums/role.enum.js";
 import RoleModel from "../models/role.model.js";
 import User from "../models/user.model.js";
-import { comparePassword, hashPassword } from "../utils/password.util.js";
 
 const initialRoles = async () => {
     try {
@@ -25,7 +25,11 @@ const initialRoles = async () => {
 const initialAdminAccount = async () => {
     try {
         const existAdminAccount = await User.findOne({
-            where: { username: "admin" }
+            $or: [
+                { username: "admin" },
+                { email: "admin@example.com" }
+            ]
+
         });
 
         const adminRole = await RoleModel.findOne({ name: Role.ADMIN });
@@ -34,16 +38,15 @@ const initialAdminAccount = async () => {
             console.error('❌ Role admin not found.');
         } else {
             if (!existAdminAccount) {
-                const hashedPassword = await hashPassword("admin");
                 const adminAccount = {
-                    fullName: "Admin",
+                    fullname: "Duc",
                     username: "admin",
-                    password: hashedPassword,
-                    email: "admin@example.com",
-                    phoneNumber: "123456789",
-                    address: "Admin Address",
+                    password: "123456",
+                    email: "admin@gmail.com",
+                    phoneNumber: "657-895-6753",
                     role: adminRole._id
                 };
+                //address: "Admin Address",
 
                 await User.create(adminAccount);
 
@@ -59,7 +62,7 @@ const initialAdminAccount = async () => {
 
 const initialApplication = async () => {
     try {
-        await dbConnect();
+        await connectMongoDB();
         await initialRoles();
         await initialAdminAccount();
     } catch (error) {
@@ -70,6 +73,3 @@ const initialApplication = async () => {
 };
 
 initialApplication();
-
-
-

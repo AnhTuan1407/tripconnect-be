@@ -1,12 +1,16 @@
 import { StatusCodes } from "http-status-codes";
-import User from "../models/user.model.js";
-import { comparePassword } from "../utils/password.util.js";
-import { generateToken, verifyToken } from "../utils/token.util.js";
 import InvalidatedToken from "../models/invalidated.token.model.js";
-import admin from "../configs/firebase.admin.config.js";
-import jwt from "jsonwebtoken";
+import User from "../models/user.model.js";
+import { comparePassword, hashPassword} from "../utils/password.util.js";
+import { generateToken, verifyToken } from "../utils/token.util.js";
+import Profile from "../models/profile.model.js";
+import { OAuth2Client } from "google-auth-library";
+import RoleModel from "../models/role.model.js";
 import Role from "../enums/role.enum.js";
+import { key } from "../config/jwt.config.js";
 
+
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 class AuthenticationController {
 
@@ -93,46 +97,55 @@ class AuthenticationController {
         }
     }
 
-    //[POST] /auth/google
-    async google(req, res) {
-        const { token } = req.body;
-
-        if (!token) {
-            return res.status(400).json({ success: false, message: "Token is required" });
-        }
-
+    // [POST] /auth/google
+    async loginGoogle(req, res) {
         try {
-            const decodedToken = await admin.auth().verifyIdToken(token);
-            const decode = decodedToken;
+            const { tokenGoogle } = req.body;
 
-            console.log(decode);
+            const ticket = await client.verifyIdToken({
+                idToken: tokenGoogle,
+                audience: process.env.GOOGLE_CLIENT_ID,
+            });
 
+            const payload = ticket.getPayload();
+            const { email, sub } = payload;
 
-            // let user = await User.findOne({ email });
-            // if (!user) {
-            //     const username = email.split("@")[0];
-            //     const role = Role.TRAVELLER;
-            //     user = new User({ email, username, role });
-            //     await user.save();
-            // }
+            let profile = await Profile.findOne({ email: email });
+            const travelerRole = await RoleModel.findOne({ name: Role.TRAVELER });
 
-            // const jwtToken = generateToken(user);
+            let userCreated;
+        
+            if (!profile) {
+                const user = {
+                    username: email.split("@")[0],
+                    password: await hashPassword("123456"),
+                    role: travelerRole._id,
+                }
+                userCreated =  await User.create(user);
+                profile = new Profile({
+                    fullName: "Google account",
+                    email: email,
+                    phoneNumber: "657-895-6753",
+                    userId: userCreated._id,
+                    googleId: sub,
+                });
 
-            // res.json({ success: true, token: jwtToken });
+                await profile.save();
+            }
+
+            const token = await generateToken(userCreated);
+
+            return res.status(StatusCodes.OK).json({
+                success: true,
+                result: token
+            });
+
         } catch (error) {
-            console.error("Firebase Auth Error:", error);
-            res.status(401).json({ success: false, message: "Invalid token", error });
-        }
-    }
-
-    //[POST] /auth/test
-    async test(req, res) {
-        try {
-            const result = req.body;
-            res.json(result);
-        } catch (error) {
-            console.error("Firebase Auth Error:", error);
-            res.status(401).json({ success: false, message: "Invalid token", error });
+            console.error("Google login error:", error);
+            res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ 
+                success: false,
+                error: "Internal Server Error" 
+            });
         }
     }
 };

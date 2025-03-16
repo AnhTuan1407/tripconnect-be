@@ -54,7 +54,7 @@ class UserController {
                 return res.status(StatusCodes.BAD_REQUEST).json({ success: false, message: errors });
             }
 
-            const travellerRole = await RoleModel.findOne({ name: Role.TRAVELLER });
+            const travellerRole = await RoleModel.findOne({ name: Role.TRAVELER });
 
             if (!travellerRole)
                 return res.status(StatusCodes.NOT_FOUND).json({ success: false, message: "Role not found." });
