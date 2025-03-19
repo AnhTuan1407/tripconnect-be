@@ -1,7 +1,7 @@
 const Role = Object.freeze({
     ADMIN: 'ADMIN',
     TOUR_GUIDE: 'TOUR_GUIDE',
-    TRAVELLER: 'TRAVELLER'
+    TRAVELER: 'TRAVELER'
 });
 
 export default Role;
